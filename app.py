@@ -11,8 +11,12 @@ E164_REGEX = re.compile(r"^\+[1-9]\d{1,14}$")
 def lookup_contact(
     phoneNumber: str = Query(..., description="Numero in formato E.164"),
     requestId: str = Query(..., description="ID conversazione e timestamp"),
-    x_api_key: Optional[str] = Header(None) 
+# Usiamo l'alias per essere sicuri che FastAPI legga esattamente "x-api-key"
+    x_api_key: Optional[str] = Header(None, alias="x-api-key")  
 ):
+    # Log di debug (vedrai questo nei log di Render se il valore arriva)
+    print(f"Header ricevuto: {x_api_key}") 
+    
     # 1. Errore 401: UNAUTHORIZED
     if x_api_key != "secret-key":
         raise HTTPException(status_code=401, detail="UNAUTHORIZED")
