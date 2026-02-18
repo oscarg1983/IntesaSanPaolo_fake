@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Query, HTTPException, Header
+from fastapi import FastAPI, Query, HTTPException, Header, Request
 from typing import Optional
 import re
 
@@ -9,16 +9,24 @@ E164_REGEX = re.compile(r"^\+[1-9]\d{1,14}$")
 
 @app.get("/api/v1/contacts/lookup")
 def lookup_contact(
-    phoneNumber: str = Query(..., description="Numero in formato E.164"),
-    requestId: str = Query(..., description="ID conversazione e timestamp"),
-# Usiamo l'alias per essere sicuri che FastAPI legga esattamente "x-api-key"
-    x_api_key: Optional[str] = Header(None, alias="x-api-key")  
+    request: Request, # Inietta l'oggetto request
+    phoneNumber: str = Query(..., description="E.164"),
+    requestId: str = Query(..., description="ID")
 ):
+    # STAMPA TUTTI GLI HEADER PER DEBUG
+    print("--- DEBUG HEADERS ---")
+    for header_name, header_value in request.headers.items():
+        print(f"{header_name}: {header_value}")
+    
+    # Prova a leggere l'header in modo case-insensitive
+    x_api_key = request.headers.get("x-api-key") 
+    
     # Log di debug (vedrai questo nei log di Render se il valore arriva)
     print(f"Header ricevuto: {x_api_key}") 
     
     # 1. Errore 401: UNAUTHORIZED
     if x_api_key != "secret-key":
+        print(f"ERRORE: x-api-key ricevuto è {x_api_key}")
         raise HTTPException(status_code=401, detail="UNAUTHORIZED")
 
     phone = phoneNumber.strip()
