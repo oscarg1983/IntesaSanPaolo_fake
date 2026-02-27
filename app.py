@@ -76,6 +76,8 @@ def lookup_contact(
                 "NativeBranch": "Milan_01",
                 "NativeRM": "Manager_Alpha",
                 "LegalName": "",
+                "CorpId": "",
+                "CIG": "",
                 "MB": "",
                 "segment": "magnifica",
                 "RM": "",
