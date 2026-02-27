@@ -9,10 +9,14 @@ app = FastAPI()
 # Regex per validare il formato E.164 (esistente)
 E164_REGEX = re.compile(r"^\+[1-9]\d{1,14}$")
 
-# Pydantic Model per la response validateCall (dal tuo schema)
+# Pydantic Model per CustomerAuthLevelResponse (come prima)
 class CustomerAuthLevelResponse(BaseModel):
     authLevels: str  # Enum: STRONG, PENDING, SOFT, CLOSED, EXPIRED, REJECTED, FAILED
-    timestamp: int  # Unix timestamp int64
+    timestamp: int   # Unix timestamp int64
+
+# Wrapper per match esatto struttura richiesta
+class ValidateCallWrapper(BaseModel):
+    CustomerAuthLevelResponse: CustomerAuthLevelResponse
 
 # Endpoint esistente (invariato)
 @app.get("/api/v1/contacts/lookup")
@@ -81,8 +85,8 @@ def lookup_contact(
         ]
     }
 
-# NUOVO ENDPOINT: /api/v1/validateCall (POST)
-@app.post("/api/v1/validateCall")
+# NUOVO ENDPOINT con CLASS + WRAPPER (formato originale preferito)
+@app.post("/api/v1/validateCall", response_model=ValidateCallWrapper)
 def validate_call(
     request: Request,
     userId: str = Query(..., description="User ID", example="12345"),
@@ -92,7 +96,7 @@ def validate_call(
     sessionId: Optional[str] = Header(None, description="Session ID", example="f2afed31-0cd1-11f1-ae25-df4dd6a2ece2"),
     locale: Optional[str] = Header(None, description="Locale", example="en")
 ):
-    # DEBUG headers (come nell'endpoint esistente)
+    # DEBUG headers
     print("--- DEBUG HEADERS validateCall ---")
     for header_name, header_value in request.headers.items():
         print(f"{header_name}: {header_value}")
@@ -100,7 +104,7 @@ def validate_call(
     print(f"userId: {userId}, token: {token}")
     print(f"Headers - timestamp: {timestamp}, channel: {channel}, sessionId: {sessionId}, locale: {locale}")
     
-    # Validazione base (opzionale, simile a lookup)
+    # Autenticazione
     x_api_key = request.headers.get("x-api-key")
     if x_api_key != "secret-key":
         raise HTTPException(status_code=401, detail="UNAUTHORIZED")
@@ -108,28 +112,28 @@ def validate_call(
     if not userId or not token:
         raise HTTPException(status_code=400, detail="Missing userId or token")
     
-    # LOGICA BUSINESS: Determina auth level (simulazione basata su token/userId)
-    # Esempi logici per test:
+    # LOGICA BUSINESS per authLevels
     if "expired" in token.lower():
         auth_level = "EXPIRED"
     elif "reject" in token.lower():
         auth_level = "REJECTED"
     elif "pending" in token.lower():
         auth_level = "PENDING"
-    elif userId == "+393666742138" and token == "789456123":
+    elif userId == "12345" and token == "abc123xyz":
         auth_level = "STRONG"
     else:
-        auth_level = "SOFT"  # Default
+        auth_level = "SOFT"
     
-    # Timestamp corrente (unix int64)
-    current_timestamp = int(datetime.now().timestamp() * 1000)  # ms per match int64
+    # Timestamp corrente (int64 ms)
+    current_timestamp = int(datetime.now().timestamp() * 1000)
     
-    response_data = CustomerAuthLevelResponse(
+    # Response con CLASS + WRAPPER (validazione automatica)
+    inner_response = CustomerAuthLevelResponse(
         authLevels=auth_level,
         timestamp=current_timestamp
     )
     
-    return response_data
+    return ValidateCallWrapper(CustomerAuthLevelResponse=inner_response)
 
 @app.get("/")
 def health():
