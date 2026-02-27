@@ -116,7 +116,7 @@ def validate_call(
         auth_level = "REJECTED"
     elif "pending" in token.lower():
         auth_level = "PENDING"
-    elif userId == "12345" and token == "abc123xyz":
+    elif userId == "+393666742138" and token == "789456123":
         auth_level = "STRONG"
     else:
         auth_level = "SOFT"  # Default
