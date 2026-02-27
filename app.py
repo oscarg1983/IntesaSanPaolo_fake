@@ -77,7 +77,7 @@ def lookup_contact(
                 "NativeRM": "Manager_Alpha",
                 "LegalName": "",
                 "CorpId": "",
-                "CIG": "",
+                "CIF": "",
                 "MB": "",
                 "segment": "magnifica",
                 "RM": "",
